@@ -83,12 +83,6 @@ func stream(ctx context.Context, client *pubsub.Client, subID string) error {
 	fmt.Printf("\n subscribing message from %s ... \n \n", subID)
 	sub := client.Subscription(subID)
 
-	// Receive messages for 10 seconds, which simplifies testing.
-	// Comment this out in production, since `Receive` should
-	// be used as a long running operation.
-	// ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	// defer cancel()
-
 	var received int32
 	err := sub.Receive(ctx, pullHandler)
 	if err != nil {
@@ -101,7 +95,19 @@ func stream(ctx context.Context, client *pubsub.Client, subID string) error {
 
 func pullHandler(_ context.Context, msg *pubsub.Message) {
 	var received int32
-	log.Printf("\n Got message: id(%s) %q, this message are published at %s \n", msg.ID, string(msg.Data), msg.PublishTime)
+	fmt.Printf("\n Got message: id(%s) %q, this message are published at %s \n", msg.ID, string(msg.Data), msg.PublishTime)
 	atomic.AddInt32(&received, 1)
-	msg.Ack()
+
+	var acknowledge string
+	fmt.Printf("\n Do you want to acknowledge this message from pubsub ? y/n \n")
+
+	_, err := fmt.Scan(&acknowledge)
+	if err != nil {
+		panic(err)
+	}
+
+	if strings.ToUpper(strings.TrimSpace(acknowledge)) == "Y" {
+		fmt.Printf("\n Done \n")
+		msg.Ack()
+	}
 }
